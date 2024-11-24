@@ -1,4 +1,3 @@
-// src/app/login/page.jsx
 "use client";
 
 import { Lock, Mail } from "lucide-react";
