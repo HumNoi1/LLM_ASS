@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useEffect, useState } from 'react';
-import { useTheme } from '@/context/ThemeContext';
 import { DiCodeigniter } from "react-icons/di";
 import { PiRobot } from "react-icons/pi";
 import { MdOutlineClass } from "react-icons/md";
@@ -14,7 +13,6 @@ const Dashboard = () => {
   const router = useRouter();
   const supabase = createClientComponentClient();
   const [loading, setLoading] = useState(true);
-  const { theme, toggleTheme } = useTheme();
   const [classes, setClasses] = useState([]);
 
   useEffect(() => {
@@ -33,7 +31,20 @@ const Dashboard = () => {
           .order('created_at', {ascending: false});
 
         if (error) throw error;
-        setClasses(classesData);
+        
+        // For each class, get the count of students from its specific table
+        const classesWithCounts = await Promise.all(classesData.map(async (classItem) => {
+          const { count, error: countError } = await supabase
+            .from(classItem.table_name)
+            .select('*', { count: 'exact', head: true });
+            
+          return {
+            ...classItem,
+            studentCount: countError ? 0 : count
+          };
+        }));
+
+        setClasses(classesWithCounts);
       } catch (error) {
         console.error('Error loading classes:', error);
       } finally {
@@ -81,10 +92,8 @@ const Dashboard = () => {
         </button>
         <div className="flex-grow" />
         <button 
-          onClick={toggleTheme}
           className="p-2 text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
         >
-          {theme === 'dark' ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
         </button>
         <button 
           onClick={handleLogout}
@@ -107,22 +116,29 @@ const Dashboard = () => {
             </Link>
           </div>
           
-          {/* Folder */}
+          {/* Class Cards */}
           {classes.map((classItem) => (
             <div key={classItem.id} className="col-span-3">
               <Link href={`/class/${classItem.id}`}>
                 <div className="w-full h-32 rounded-lg bg-blue-500 p-4 flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                  <MdOutlineClass className="text-white text-xl" />
-                  <span>
-                    {new Date(classItem.created_at).toLocaleDateString()}
-                  </span>
+                  <div className="flex justify-between items-start">
+                    <MdOutlineClass className="text-white text-xl" />
+                    <span className="text-white text-sm">
+                      {new Date(classItem.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
                   <div>
                     <h3 className="text-white font-medium truncate">
                       {classItem.class_name}
                     </h3>
-                    <p className="text-white/80 text-sm">
-                      Term: {classItem.term}
-                    </p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-white/80 text-sm">
+                        Term: {classItem.term}
+                      </p>
+                      <p className="text-white/80 text-sm">
+                        Students: {classItem.studentCount}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </Link>

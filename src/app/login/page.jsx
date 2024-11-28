@@ -1,5 +1,10 @@
 "use client";
 
+export const meatadata ={
+  title: 'Login',
+  description: 'Login page for LLM Assistant',
+}
+
 import { Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';

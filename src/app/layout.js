@@ -4,7 +4,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-          {children}
+          {children}     
       </body>
     </html>
   );
